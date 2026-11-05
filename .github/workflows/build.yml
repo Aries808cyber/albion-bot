@@ -1,0 +1,30 @@
+name: Compilar Albion Bot a .EXE
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Copiar código fuente
+      uses: actions/checkout@v3
+
+    - name: Configurar Python en la nube
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Instalar dependencias
+      run: |
+        pip install customtkinter requests pyinstaller
+
+    - name: Compilar con PyInstaller
+      run: |
+        pyinstaller --noconsole --onefile albion_desktop_app.py
+
+    - name: Guardar el ejecutable como artefacto
+      uses: actions/upload-artifact@v3
+      with:
+        name: AlbionBot-Windows-EXE
+        path: dist/albion_desktop_app.exe
