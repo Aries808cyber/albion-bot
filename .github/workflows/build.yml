@@ -24,7 +24,7 @@ jobs:
         pyinstaller --noconsole --onefile albion_desktop_app.py
 
     - name: Guardar el ejecutable como artefacto
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: AlbionBot-Windows-EXE
         path: dist/albion_desktop_app.exe
