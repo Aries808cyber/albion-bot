@@ -1,25 +1,24 @@
 import io
 import threading
 import requests
+import urllib.parse
 import customtkinter as ctk
 from PIL import Image
 
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
 
-# Catálogo completo de ítems y armas
+# Ítems con alta rotación garantizada en la API pública de Albion
 ITEMS_MAP = {
-    "Espada Ancha (Broadsword)": "MAIN_SWORD",
-    "Claymore": "2H_CLAYMORE",
-    "Hacha de Guerra (Greataxe)": "2H_AXE",
-    "Arco de Guerra (Warbow)": "2H_WARBOW",
     "Lingote de Metal": "METALBAR",
     "Tablas de Madera": "WOOD",
     "Tela": "CLOTH",
     "Cuero": "LEATHER",
     "Bolsa": "BAG",
     "Capa": "CAPE",
-    "Poción de Vida": "POTION_HEALTH"
+    "Poción de Vida": "POTION_HEALTH",
+    "Espada Ancha (Broadsword)": "MAIN_SWORD",
+    "Claymore": "2H_CLAYMORE"
 }
 
 CIUDADES = ["Caerleon", "Martlock", "Bridgewatch", "Lymhurst", "Fort Sterling", "Thetford"]
@@ -31,7 +30,7 @@ class AlbionArbitrageApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("Albion Online - Arbitrage Professional Suite")
+        self.title("Albion Online - Arbitrage Pro (Modo Seguro)")
         self.geometry("1040x740")
 
         self.tabview = ctk.CTkTabview(self, width=1000, height=680)
@@ -43,7 +42,6 @@ class AlbionArbitrageApp(ctk.CTk):
         top_frame = ctk.CTkFrame(self.tab_scan)
         top_frame.pack(fill="x", padx=10, pady=10)
 
-        # Fila 0: Ciudades
         ctk.CTkLabel(top_frame, text="Origen:", font=("Arial", 11, "bold")).grid(row=0, column=0, padx=8, pady=8, sticky="w")
         self.orig_var = ctk.StringVar(value="Martlock")
         self.orig_menu = ctk.CTkOptionMenu(top_frame, variable=self.orig_var, values=CIUDADES, width=130)
@@ -54,12 +52,11 @@ class AlbionArbitrageApp(ctk.CTk):
         self.dest_menu = ctk.CTkOptionMenu(top_frame, variable=self.dest_var, values=CIUDADES, width=130)
         self.dest_menu.grid(row=0, column=3, padx=8, pady=8)
 
-        self.btn_run = ctk.CTkButton(top_frame, text="🚀 Ejecutar Escaneo Pro", fg_color="#2b8a3e", hover_color="#237032", command=self.execute_arbitrage_scan)
+        self.btn_run = ctk.CTkButton(top_frame, text="🚀 Escanear Precios Reales", fg_color="#2b8a3e", hover_color="#237032", command=self.execute_arbitrage_scan)
         self.btn_run.grid(row=0, column=4, columnspan=2, padx=15, pady=8, sticky="ew")
 
-        # Fila 1: Ítem y Tier
-        ctk.CTkLabel(top_frame, text="Ítem / Arma:", font=("Arial", 11, "bold")).grid(row=1, column=0, padx=8, pady=8, sticky="w")
-        self.item_var = ctk.StringVar(value="Espada Ancha (Broadsword)")
+        ctk.CTkLabel(top_frame, text="Ítem / Recurso:", font=("Arial", 11, "bold")).grid(row=1, column=0, padx=8, pady=8, sticky="w")
+        self.item_var = ctk.StringVar(value="Lingote de Metal")
         self.item_menu = ctk.CTkOptionMenu(top_frame, variable=self.item_var, values=list(ITEMS_MAP.keys()), command=self.update_item_preview, width=220)
         self.item_menu.grid(row=1, column=1, columnspan=2, padx=8, pady=8, sticky="w")
 
@@ -68,7 +65,6 @@ class AlbionArbitrageApp(ctk.CTk):
         self.tier_menu = ctk.CTkOptionMenu(top_frame, variable=self.tier_var, values=TIERS, command=self.update_item_preview, width=80)
         self.tier_menu.grid(row=1, column=4, padx=8, pady=8)
 
-        # Fila 2: Encantamiento y Calidad
         ctk.CTkLabel(top_frame, text="Encantamiento:", font=("Arial", 11, "bold")).grid(row=2, column=0, padx=8, pady=8, sticky="w")
         self.enc_var = ctk.StringVar(value="Sin encantar (.0)")
         self.enc_menu = ctk.CTkOptionMenu(top_frame, variable=self.enc_var, values=ENCANTAMIENTOS, command=self.update_item_preview, width=160)
@@ -79,7 +75,6 @@ class AlbionArbitrageApp(ctk.CTk):
         self.qual_menu = ctk.CTkOptionMenu(top_frame, variable=self.qual_var, values=CALIDADES, width=150)
         self.qual_menu.grid(row=2, column=3, padx=8, pady=8)
 
-        # Panel de Vista Previa
         preview_frame = ctk.CTkFrame(self.tab_scan)
         preview_frame.pack(fill="x", padx=10, pady=5)
 
@@ -95,12 +90,10 @@ class AlbionArbitrageApp(ctk.CTk):
         self.lbl_item_id = ctk.CTkLabel(info_layout, text="", font=("Consolas", 11), text_color="#aaaaaa")
         self.lbl_item_id.pack(anchor="w", pady=2)
 
-        # Consola de Resultados
         self.log_box = ctk.CTkTextbox(self.tab_scan, width=960, height=320, font=("Consolas", 11))
         self.log_box.pack(padx=10, pady=10, fill="both", expand=True)
-        self.log_box.insert("0.0", "[SISTEMA] Suite de Arbitraje lista y optimizada.\n")
+        self.log_box.insert("0.0", "[SISTEMA] Conexión lista. Selecciona un recurso o ítem común para ver precios inmediatos.\n")
 
-        # Configuración
         lbl_config = ctk.CTkLabel(self.tab_config, text="Parámetros y Tasas Financieras", font=("Arial", 14, "bold"))
         lbl_config.pack(padx=20, pady=20, anchor="w")
         ctk.CTkLabel(self.tab_config, text="• Impuesto de Mercado (Con Premium): 8.5%", font=("Arial", 12)).pack(padx=20, pady=5, anchor="w")
@@ -136,14 +129,14 @@ class AlbionArbitrageApp(ctk.CTk):
         threading.Thread(target=self.load_item_image, args=(item_id,), daemon=True).start()
 
     def load_item_image(self, item_id):
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
-        img_url = f"https://render.albiononline.com/v1/item/{item_id}.png?size=80"
+        headers = {"User-Agent": "Mozilla/5.0"}
+        encoded_id = urllib.parse.quote(item_id, safe='')
+        img_url = f"https://render.albiononline.com/v1/item/{encoded_id}.png?size=80"
         try:
             res = requests.get(img_url, headers=headers, timeout=5)
             if res.status_code == 200:
                 image_data = Image.open(io.BytesIO(res.content))
                 ctk_img = ctk.CTkImage(light_image=image_data, dark_image=image_data, size=(80, 80))
-                # Mantener referencia global para evitar que el recolector de basura elimine la imagen
                 self.current_ctk_img = ctk_img
                 self.img_label.configure(image=ctk_img, text="")
             else:
@@ -159,16 +152,17 @@ class AlbionArbitrageApp(ctk.CTk):
         orig = self.orig_var.get()
         dest = self.dest_var.get()
         item_id = self.get_full_item_id()
-        calidad = self.qual_var.get()
+        calidad_str = self.qual_var.get()
+        target_quality = int(calidad_str.split(" - ")[0])
 
         if orig == dest:
             self.log("[ERROR] El origen y el destino no pueden ser la misma ciudad.")
             return
 
-        self.log(f"\n[CONSULTA] Analizando '{item_id}' [Calidad: {calidad}] ({orig} ➡️ {dest})...")
-        threading.Thread(target=self.fetch_market_data, args=(orig, dest, item_id), daemon=True).start()
+        self.log(f"\n[CONSULTA] Analizando '{item_id}' [Calidad: {calidad_str}] ({orig} ➡️ {dest})...")
+        threading.Thread(target=self.fetch_market_data, args=(orig, dest, item_id, target_quality), daemon=True).start()
 
-    def fetch_market_data(self, orig, dest, item_id):
+    def fetch_market_data(self, orig, dest, item_id, target_quality):
         headers = {"User-Agent": "Mozilla/5.0"}
         url = f"https://www.albion-online-data.com/api/v2/stats/prices/{item_id}?locations={orig},{dest}"
         
@@ -185,22 +179,26 @@ class AlbionArbitrageApp(ctk.CTk):
 
                 for entry in data:
                     city = entry.get("city")
+                    q = entry.get("quality", 1)
+                    
+                    # Buscamos precio de venta mínimo disponible
                     sell_min = entry.get("sell_price_min", 0)
                     buy_max = entry.get("buy_price_max", 0)
                     price_to_use = sell_min if sell_min > 0 else buy_max
 
-                    if city == orig:
+                    if city == orig and orig_price == 0:
                         orig_price = price_to_use
-                    elif city == dest:
+                    elif city == dest and dest_price == 0:
                         dest_price = price_to_use
 
                 self.log("=" * 70)
-                self.log(f" 📦 REPORTE: {item_id}")
+                self.log(f" 📦 REPORTE: {item_id} (Calidad {target_quality})")
                 self.log(f" 📍 Compra en {orig}: {orig_price:,} plata")
                 self.log(f" 📍 Venta en {dest}: {dest_price:,} plata")
 
                 if orig_price == 0 or dest_price == 0:
-                    self.log(" ⚠️ Mercado sin órdenes activas registradas en alguna de las ciudades.")
+                    self.log(" ⚠️ Mercado sin órdenes activas para este ítem en la API.")
+                    self.log(" 💡 Sugerencia: Prueba con 'Lingote de Metal' o 'Tela' en T4 o T5 para ver precios instantáneos.")
                 else:
                     tax_rate = 0.085
                     logistics_rate = 0.025
