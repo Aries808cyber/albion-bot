@@ -17,11 +17,11 @@ jobs:
 
     - name: Instalar dependencias
       run: |
-        pip install customtkinter requests pyinstaller
+        pip install customtkinter requests pyinstaller pillow
 
     - name: Compilar con PyInstaller
       run: |
-        pyinstaller --noconsole --onefile albion_desktop_app.py
+        pyinstaller --noconsole --onefile --collect-all customtkinter albion_desktop_app.py
 
     - name: Guardar el ejecutable como artefacto
       uses: actions/upload-artifact@v4
